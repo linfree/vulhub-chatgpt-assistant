@@ -1,0 +1,17 @@
+{
+    "schema_version": "v1",
+    "name_for_human": "漏洞靶机部署",
+    "name_for_model": "vulhub_deploy",
+    "description_for_human": "用于漏洞靶机部署的插件，可以自动化部署、启动、停止、管理漏洞靶机。",
+    "description_for_model": "用于漏洞靶机部署的插件，可以自动化部署、启动、停止、管理漏洞靶机。",
+    "auth": {
+        "type": "none"
+    },
+    "api": {
+        "type": "openapi",
+        "url": "http://localhost:5003/api.yaml"
+    },
+    "logo_url": "http://localhost:5003/logo.png",
+    "contact_email": "linfree.php@outlook.com",
+    "legal_info_url": "http://example.com/legal"
+}
