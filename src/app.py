@@ -7,15 +7,9 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from libs.vulhub_api import (
-    get_vul_id_by_app_name,
-    get_vul_id_by_app_name_or_cve_id,
-    get_all_vul_id_list,
-    get_base_app_list,
-    get_base_app_dockerfile,
-    BASE_APP_LIST,
-    ALL_VUL_ID_LIST,
     VULHUB_PATH,
     BASE_CONTAINER_DIR,
+    VulhubApi,
 )
 
 class VulInfo(BaseModel):
@@ -47,29 +41,21 @@ async def start_vul_container(vul_info: VulInfo):
         - message: 返回的信息
         - container_info: 容器启动的ip和端口信息和容器id
     """
-    # 获取要启动的容器的docker-compose.yml文件
-    # 通过应用名称或cve编号获取docker-compose.yml文件
-    # 通过docker-compose.yml文件启动容器
-    # 返回容器的ip和端口信息和容器id
+
     app_name = vul_info.app_name
     cve_id = vul_info.cve_id
+
     if not app_name and not cve_id:
         return {"code": 1, "message": "app_name or cve_id is required"}
-    if cve_id:
-        vul_path = get_vul_id_by_app_name_or_cve_id(cve_id=cve_id)
-        if not vul_path:
-            return {"code": 1, "message": "cve_id is not exist"}
-
-        # 通过cve_id获取docker-compose.yml文件
-        container_info = {"ip": "<ip>", "id": "container_id",
-                          f"{VULHUB_PATH}/{vul_path}/docker-compose.yml": ["<port1>", "<port2>"]}
-        pass
-    else:
-        # 通过app_name获取docker-compose.yml文件
-        vul_path = get_vul_id_by_app_name(app_name=app_name)
-        container_info = {"ip": "<ip>", "id": "container_id",
-                          f"{VULHUB_PATH}/{vul_path}/docker-compose.yml": ["<port1>", "<port2>"]}
-        pass
+        
+    container_info = VulhubApi().search_vul(app_name=app_name, cve_id=cve_id)
+    if not container_info:
+        return {"code": 1, "message": "app_name or cve_id is not exist"}
+    # TODO: 通过容器信息启动容器
+    # docker_compose_file = os.path.join(BASE_CONTAINER_DIR, app_name, cve_id, "docker-compose.yml")
+    # start_cmd = f"docker-compose -f {docker_compose_file} up -d"
+    # os.system(start_cmd)
+    
     return {"code": 0, "message": "success", "container_info": container_info}
 
 @app.get("/start_base_app_container")
@@ -87,19 +73,16 @@ async def start_base_app_container(app_name: str, version: str=None):
     # 返回容器的ip和端口信息和容器id
     if not app_name and not version:
         return {"code": 1, "message": "app_name or version is required"}
-    # 通过应用名称和版本号获取基础容器的Dockerfile文件
-    dockerfile_path = get_base_app_dockerfile(app_name=app_name, version=version)
-    if not dockerfile_path:
+    app_info = VulhubApi().search_base_app(app_name=app_name, version=version)
+    if not app_info:
         return {"code": 1, "message": "app_name or version is not exist"}
-    # 通过Dockerfile文件构建基础容器
-    # build_cmd = f"docker build -t {app_name}:{version} -f {dockerfile_path} ."
+    
+    # TODO: 通过容器信息build容器,启动容器
+    # docker_file = app_info.get("docker_file")
+    # build_cmd = f"docker build -f {docker_file} -t {app_name}:{version} ."
     # os.system(build_cmd)
-    # 通过基础容器启动容器
-    # run_cmd = f"docker run -d -p 80:80 {app_name}:{version}"
-    # os.system(run_cmd)
-    # 返回容器的ip和端口信息和容器id
-    container_info = {"ip": "<ip>", "id": "container_id","path": dockerfile_path}
-    return {"code": 0, "message": "success", "container_info": container_info}
+    return {"code": 0, "message": "success", "container_info": app_info}
+
 
 
 @app.get("/stop_container")
@@ -131,10 +114,8 @@ async def get_vul_doc(vul_info: VulInfo):
     cve_id = vul_info.cve_id
     if not app_name and not cve_id:
         return {"code": 1, "message": "app_name or cve_id is required"}
-    if cve_id:
-        # 通过cve_id获取漏洞文档
-        pass
-    if app_name:
-        # 通过app_name获取漏洞文档
-        pass
-    return {"code": 0, "message": "success", "vul_doc": "http://file.vulhub.org/xxx.pdf"}
+    vul_doc = VulhubApi().search_vul(app_name=app_name, cve_id=cve_id)
+    if not vul_doc:
+        return {"code": 1, "message": "app_name or cve_id is not exist"}
+    
+    return {"code": 0, "message": "success", "vul_doc": vul_doc}
