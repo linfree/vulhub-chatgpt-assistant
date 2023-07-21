@@ -6,7 +6,7 @@ from datetime import datetime
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+
 
 from libs.vulhub_api import (
     VULHUB_PATH,
@@ -14,7 +14,7 @@ from libs.vulhub_api import (
     VulhubApi,
 )
 
-templates = Jinja2Templates(directory="templates")
+
 
 class VulInfo(BaseModel):
     """
