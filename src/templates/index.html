@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VulChat</title>
+
+    <!-- Link to Bootstrap -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Link to Vue.js -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.js"></script>
+
+    <!-- Link to Axios for making HTTP requests (a modern replacement for AJAX) -->
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.19.2/dist/axios.min.js"></script>
+
+    <style>
+        body {
+            background-color: #f5f5f5;
+        }
+        .header {
+            margin-bottom: 30px;
+            color: #007bff;
+        }
+        .header h1 {
+            font-size: 2.5em;
+        }
+        .header img {
+            width: 50px;
+            height: 50px;
+            /* 靠右 */
+            float: right;
+        }
+        .message {
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .user-message {
+            color: blue;
+            background-color: #e6f7ff;
+        }
+        .server-message {
+            color: green;
+            background-color: #f6ffed;
+        }
+        .messages {
+            height: 400px;
+            overflow-y: scroll;
+            border: none;
+            /* padding: 10px; */
+            background-color: #fff;
+            /* box-shadow: 0 0 10px rgba(0,0,0,0.1); */
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .messages::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .messages {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="header row">
+            <div class="col-sm-1"></div>
+            <!-- logo居中 -->
+            <div class="col-sm-1" >
+                <!-- <img src="logo.png" alt="logo" > -->
+            </div>
+            <div class="col-sm-10">
+                <h1>Vul Chat</h1>
+            </div>
+        </div>
+        <div class="row mt-5">
+            <div class="col-lg-8 offset-lg-2 col-md-10 offset-md-1">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="messages" ref="messages">
+                            <div class="message" v-for="message in messages">
+                                <div :class="{ 'user-message': message.user === 'You', 'server-message': message.user !== 'You' }">
+                                    <strong>{{ message.user }}</strong> <small>({{ message.date }})</small>
+                                    <pre>{{ message.text }}</pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <form @submit.prevent="sendMessage">
+                            <textarea rows="3" class="form-control" v-model="newMessage" @keydown.enter.exact.prevent="sendMessage" placeholder="Type your message here..."></textarea>
+                            <button class="btn btn-primary mt-3">Send</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                messages: [],
+                newMessage: ''
+            },
+            methods: {
+                sendMessage() {
+                    if (this.newMessage.trim() !== '') {
+                        // This would be an actual AJAX request in a real-world application
+                        this.messages.push({
+                            user: 'You',
+                            date: new Date().toLocaleString(),
+                            text: this.newMessage
+                        });
+                        this.messages.push({
+                            user: 'AI',
+                            date: new Date().toLocaleString(),
+                            text: this.newMessage
+                        });
+                        this.newMessage = '';
+                    }
+                }
+            },
+            updated() {
+                var container = this.$refs.messages;
+                container.scrollTop = container.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>

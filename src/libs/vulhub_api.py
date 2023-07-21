@@ -12,7 +12,7 @@ BASE_CONTAINER_DIR = "base"
 class VulhubApi(object):
     """
     vulhub项目的api
-    vuls: 漏洞列表，格式为：{"app_name+cve_id": {app_name: "", vul_id: "", build_file: "", markdown: ""}} 方便查询
+    vuls: 漏洞列表，格式为：{"app_name+cve_id": {app_name: "", vul_id: "", docker_compose_file: "", markdown: ""}} 方便查询
     base_apps: 基础容器列表，格式为：{"app_name+version": {app_name: "", version: "", dockerfile: ""}} 方便查询
     """
 
@@ -48,11 +48,11 @@ class VulhubApi(object):
                     markdown_path = os.path.join(vul_path, "README.md")
                 if not os.path.exists(markdown_path):
                     markdown_path = None
-            
+
                 vuls[f"{app_name}{vul_id}"] = {
                     "app_name": app_name,
                     "vul_id": vul_id,
-                    "build_file": os.path.join(VULHUB_PATH, app_name, vul_id, "docker-compose.yml"),
+                    "docker_compose_file": os.path.join(VULHUB_PATH, app_name, vul_id, "docker-compose.yml"),
                     "markdown_file": markdown_path
                 }
         return vuls
@@ -69,7 +69,7 @@ class VulhubApi(object):
             if app_name.startswith(".") or not os.path.isdir(app_path):
                 continue
             for version in os.listdir(app_path):
-                
+
                 app_version_path = os.path.join(app_path, version)
                 if version.startswith(".") or not os.path.isdir(app_version_path):
                     continue
@@ -80,10 +80,10 @@ class VulhubApi(object):
                 base_apps[f"{app_name}{version}"] = {
                     "app_name": app_name,
                     "version": version,
-                    "dockerfile": os.path.join(app_version_path, "Dockerfile")
+                    "dockerfile_path": app_version_path
                 }
         return base_apps
-    
+
     def search_vul(self, app_name=None, cve_id=None):
         """
         根据应用名称或者cve_id查询漏洞
@@ -99,7 +99,7 @@ class VulhubApi(object):
                 if app_name.lower() in vul_id.lower():
                     return self.vuls[vul_id]
         return None
-    
+
     def search_base_app(self, app_name, version=None):
         """
         根据应用名称和版本号查询基础容器
@@ -107,19 +107,19 @@ class VulhubApi(object):
         if not app_name and not version:
             return None
         if version:
-            candidate_app = [app for app in self.base_apps.keys() if app_name.lower() in app.lower()]
+            candidate_app = [app for app in self.base_apps.keys(
+            ) if app_name.lower() in app.lower()]
             for app in candidate_app:
                 app_info = self.base_apps[app]
                 if app_info["version"].lower().replace(app_info["app_name"].lower(), "").startswith(version.lower()):
                     return app_info
-                    
+
         else:
             for app in self.base_apps.keys():
                 if app_name.lower() in app.lower():
                     return self.base_apps[app]
 
         return None
-
 
 
 if __name__ == "__main__":
