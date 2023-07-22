@@ -11,15 +11,17 @@ import docker
 DOCKER_SERVER_IP = "127.0.0.1"
  
 
-from vulhub_api import (
+from libs.vulhub_api import (
     VULHUB_PATH,
     BASE_CONTAINER_DIR,
     VulhubApi
 )
 
-client = docker.DockerClient(base_url='tcp://localhost:2375')
+from config import (
+    DOCKER_SERVER_URL,
+)
 
-
+client = docker.DockerClient(base_url=DOCKER_SERVER_URL)
 
 
 def start_vul_container(app_name: str = None, cve_id: str = None):
@@ -99,14 +101,72 @@ def start_base_app_container(app_name: str,version: str = None):
     dockerfile_path = container_info.get("dockerfile_path")
     print(dockerfile_path)
     # TODO: 通过容器信息启动容器
-    image , logs = client.images.build(path=dockerfile_path,tag=f"{app_name}:{version}")
-    print(image)
-    print(logs)
-    container = client.containers.run(image=f"{app_name}:{version}",detach=True)
+    tag = f"{app_name}:{container_info.get('version')}"
+    image , logs = client.images.build(path=dockerfile_path,tag=tag)
+    # print(image)
+    # print(logs)
+    container = client.containers.run(image=tag,detach=True)
     print(container)
     return {"code": 0, "message": "success", "container_info": container_info}
 
-    
+
+FUNCTIONS = [
+    {
+        "name": "start_vul_container",
+        "description": "Starts a vulnerable container using either an application name or CVE ID. Returns the URL, ID, and other info of the container.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "app_name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                },
+                "cve_id": {
+                    "type": "string",
+                    "description": "The ID of the CVE",
+                }
+            }
+        }
+    },
+    {
+        "name": "stop_vul_container",
+        "description": "Stops a vulnerable container using either an application name or CVE ID.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "app_name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                },
+                "cve_id": {
+                    "type": "string",
+                    "description": "The ID of the CVE",
+                }
+            }
+        }
+    },
+    {
+        "name": "start_base_app_container",
+        "description": "Starts a base application container using the application name. Returns the URL, ID, and other info of the container.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "app_name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                },
+                "version": {
+                    "type": "string",
+                    "description": "The version of the application",
+                }
+            },
+            "required": ["app_name"]
+        }
+    }
+]
+
+
+
 if __name__ == "__main__":
     # print(start_vul_container(cve_id="CVE-2020-11981"))
     # print(stop_vul_container(cve_id="CVE-2020-11981"))

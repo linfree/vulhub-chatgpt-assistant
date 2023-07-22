@@ -6,6 +6,15 @@ from datetime import datetime
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
+from libs.gpt_api import GPTAPI
+from config import (
+    OPENAI_API_KEY,
+    DEFAULT_MODEL,
+)
+
+from libs.plugin_functions import (
+    FUNCTIONS,
+)
 
 
 from libs.vulhub_api import (
@@ -13,7 +22,6 @@ from libs.vulhub_api import (
     BASE_CONTAINER_DIR,
     VulhubApi,
 )
-
 
 
 class VulInfo(BaseModel):
@@ -36,9 +44,9 @@ async def root(request: Request):
     with open("templates/index.html", "r", encoding="utf-8") as f:
         html_content = f.read()
     return html_content
-    
 
-@app.get("/chat")
+
+@app.post("/chat")
 async def chat(request: Request):
     """
     前端post提问，后端通过调用openapi的接口获取答案后返回，如果需要调用function，可以在这里调用
@@ -47,10 +55,16 @@ async def chat(request: Request):
         - message: 返回的信息
         - answer: 答案
     """
-    question = request.query_params.get("question")
-    if not question:
-        return {"code": 1, "message": "question is required"}
-    
+    message = await request.json()
+    message = message.get("message", None)
+    if not message:
+        return {"code": 1, "message": "message is required"}
+    gpt_api = GPTAPI(OPENAI_API_KEY, FUNCTIONS, DEFAULT_MODEL)
+    answer = gpt_api.run_conversation(message)
+    print(answer)
+    answer = answer["choices"][0]["message"]
+    return {"code": 0, "message": "success", "data": answer}
+
 
 @app.get("/start_container")
 async def start_vul_container(vul_info: VulInfo):
@@ -140,6 +154,7 @@ async def get_vul_doc(vul_info: VulInfo):
 
     return {"code": 0, "message": "success", "vul_doc": vul_doc}
 
+
 @app.get("/show_vul_md_file")
 async def show_vul_md_file(vul_name: str):
     """
@@ -154,6 +169,3 @@ async def show_vul_md_file(vul_name: str):
     vul_info = vuls_dict.get(vul_name.lower(), None)
     if not vul_info:
         return {"code": 1, "message": "vul_name is not exist"}
-
-
-    

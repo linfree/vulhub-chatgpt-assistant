@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,59 +19,71 @@
         body {
             background-color: #f5f5f5;
         }
+
         .header {
             margin-bottom: 30px;
             color: #007bff;
         }
+
         .header h1 {
             font-size: 2.5em;
         }
+
         .header img {
             width: 50px;
             height: 50px;
             /* 靠右 */
             float: right;
         }
+
         .message {
             margin-bottom: 10px;
             border: 1px solid #ddd;
             padding: 10px;
             border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         .user-message {
             color: blue;
             background-color: #e6f7ff;
         }
+
         .server-message {
             color: green;
             background-color: #f6ffed;
         }
+
         .messages {
-            height: 400px;
+            height: 600px;
             overflow-y: scroll;
             border: none;
             /* padding: 10px; */
             background-color: #fff;
             /* box-shadow: 0 0 10px rgba(0,0,0,0.1); */
         }
+
         /* Hide scrollbar for Chrome, Safari and Opera */
         .messages::-webkit-scrollbar {
             display: none;
         }
+
         /* Hide scrollbar for IE, Edge and Firefox */
         .messages {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
         }
     </style>
 </head>
+
 <body>
     <div id="app" class="container">
         <div class="header row">
             <div class="col-sm-1"></div>
             <!-- logo居中 -->
-            <div class="col-sm-1" >
+            <div class="col-sm-1">
                 <!-- <img src="logo.png" alt="logo" > -->
             </div>
             <div class="col-sm-10">
@@ -83,7 +96,8 @@
                     <div class="card-body">
                         <div class="messages" ref="messages">
                             <div class="message" v-for="message in messages">
-                                <div :class="{ 'user-message': message.user === 'You', 'server-message': message.user !== 'You' }">
+                                <div
+                                    :class="{ 'user-message': message.user === 'You', 'server-message': message.user !== 'You' }">
                                     <strong>{{ message.user }}</strong> <small>({{ message.date }})</small>
                                     <pre>{{ message.text }}</pre>
                                 </div>
@@ -93,7 +107,9 @@
                         <hr>
 
                         <form @submit.prevent="sendMessage">
-                            <textarea rows="3" class="form-control" v-model="newMessage" @keydown.enter.exact.prevent="sendMessage" placeholder="Type your message here..."></textarea>
+                            <textarea rows="3" class="form-control" v-model="newMessage"
+                                @keydown.enter.exact.prevent="sendMessage"
+                                placeholder="Type your message here..."></textarea>
                             <button class="btn btn-primary mt-3">Send</button>
                         </form>
                     </div>
@@ -118,13 +134,38 @@
                             date: new Date().toLocaleString(),
                             text: this.newMessage
                         });
-                        this.messages.push({
-                            user: 'AI',
-                            date: new Date().toLocaleString(),
-                            text: this.newMessage
-                        });
+                        this.sendChat();
+
                         this.newMessage = '';
                     }
+                },
+                sendChat() {
+                    // 发送聊天信息到后端
+                    axios.post('/chat', {
+                        message: this.newMessage
+                    }, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(response => {
+                        if (response.status== 200 && response.data.code == 0) {
+                            console.log('success');
+                            console.log(response);                            
+                            this.messages.push({
+                                user: response.data.data.role,
+                                date: new Date().toLocaleString(),
+                                text: response.data.data.content
+                            });
+                            this.newMessage = '';
+                        } else {
+                            console.log('fail');
+                            console.log(response);
+                            alert(response.data.message);
+                        }
+                    }).catch(error => {
+                        console.log(error);
+                    });
+
                 }
             },
             updated() {
@@ -134,4 +175,5 @@
         });
     </script>
 </body>
+
 </html>

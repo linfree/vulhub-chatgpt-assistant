@@ -1,96 +1,98 @@
 # 对openai的接口的封装
-import requests
 import os
 import openai
 import json
-
-from plugin_functions import (
-    start_base_app_container,
-    stop_vul_container,
-    start_vul_container
+import copy
+from config import (
+    OPENAI_API_KEY,
+    IS_PORXY,
+    HTTP_PROXY,
+    HTTPS_PROXY,
+    DEFAULT_MODEL,
 )
 
+
+from libs.plugin_functions import (
+    start_base_app_container,
+    stop_vul_container,
+    start_vul_container,
+    FUNCTIONS,
+)
+
+
 # 从环境变量中获取openai的api key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
-
+VUL_FUNCTIONS = FUNCTIONS
+COMMON_MESSAGES = [
+    {"role": "system", "content": "你是一个安全助手，你可以通过调用函数帮我启动和关闭漏洞容器和基础容器，你可以通过调用函数帮我获取漏洞验证文档"},
+]
 # http代理
-os.environ['HTTP_PROXY'] = 'http://127.0.0.1:1080'
-os.environ['HTTPS_PROXY'] = 'http://127.0.0.1:1080'
-
-# 漏洞容器启动工具的全部函数api文档，从fastapi的文档中获取
-VUL_FUNCTIONS =  []
-
-# Example dummy function hard coded to return the same weather
-# In production, this could be your backend API or an external API
-def get_current_weather(location, unit="fahrenheit"):
-    """Get the current weather in a given location"""
-    weather_info = {
-        "location": location,
-        "temperature": "72",
-        "unit": unit,
-        "forecast": ["sunny", "windy"],
-    }
-    return json.dumps(weather_info)
+if IS_PORXY:
+    os.environ['HTTP_PROXY'] = HTTP_PROXY
+    os.environ['HTTPS_PROXY'] = HTTPS_PROXY
 
 
-def run_conversation():
-    # Step 1: send the conversation and available functions to GPT
-    messages = [{"role": "user", "content": "What's the weather like in Boston?"}]
-    functions = [
-        {
-            "name": "get_current_weather",
-            "description": "Get the current weather in a given location",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "The city and state, e.g. San Francisco, CA",
-                    },
-                    "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-                },
-                "required": ["location"],
-            },
-        }
-    ]
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo-0613",
-        messages=messages,
-        functions=functions,
-        function_call="auto",  # auto is default, but we'll be explicit
-    )
-    response_message = response["choices"][0]["message"]
+# 将上面的示例代码改造成可以传入消息参数和function参数的类
+class GPTAPI:
 
-    # Step 2: check if GPT wanted to call a function
-    if response_message.get("function_call"):
-        # Step 3: call the function
-        # Note: the JSON response may not always be valid; be sure to handle errors
-        available_functions = {
-            "get_current_weather": get_current_weather,
-        }  # only one function in this example, but you can have multiple
-        function_name = response_message["function_call"]["name"]
-        fuction_to_call = available_functions[function_name]
-        function_args = json.loads(response_message["function_call"]["arguments"])
-        function_response = fuction_to_call(
-            location=function_args.get("location"),
-            unit=function_args.get("unit"),
-        )
+    def __init__(self, api_key: str, functions: list, model: str = "gpt-3.5-turbo-0613"):
+        self.api_key = api_key
+        self.functions = functions
+        self.model = model
+        openai.api_key = api_key
 
-        # Step 4: send the info on the function call and function response to GPT
-        messages.append(response_message)  # extend conversation with assistant's reply
-        messages.append(
-            {
-                "role": "function",
-                "name": function_name,
-                "content": function_response,
-            }
-        )  # extend conversation with function response
-        second_response = openai.ChatCompletion.create(
+    def run_conversation(self, message):
+        """对话函数，根据用户消息调用openai的api返回回复消息，
+        如果需要调用函数则调用函数返回函数的返回值，
+        再次调用openai的api返回回复消息
+
+        Args:
+            messages (_type_): _description_
+
+        Returns:
+            second_response (_type_): _description_
+        """
+        messages = copy.deepcopy(COMMON_MESSAGES)
+        messages.append({"role": "user", "content": message})
+
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-0613",
             messages=messages,
-        )  # get a new response from GPT where it can see the function response
-        return second_response
+            functions=self.functions,
+            function_call="auto",  # auto is default, but we'll be explicit
+        )
+        response_message = response["choices"][0]["message"]
+        if response_message.get("function_call"):
+            available_functions = {
+                "start_base_app_container": start_base_app_container,
+                "stop_vul_container": stop_vul_container,
+                "start_vul_container": start_vul_container
+            }
+
+            function_name = response_message["function_call"]["name"]
+            fuction_to_call = available_functions[function_name]
+            function_args = response_message["function_call"]["arguments"]
+            function_args = json.loads(function_args)
+            # print(function_args)
+            function_response = fuction_to_call(**function_args)
+            function_response = json.dumps(function_response)
+
+            messages.append(response_message)
+            messages.append(
+                {
+                    "role": "function",
+                    "name": function_name,
+                    "content": function_response,
+                }
+            )
+            second_response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo-0613",
+                messages=messages,
+            )
+            return second_response        
+        return response
 
 
-print(run_conversation())
+if __name__ == "__main__":
+    gpt = GPTAPI(OPENAI_API_KEY, VUL_FUNCTIONS, DEFAULT_MODEL)
+    print(gpt.run_conversation("帮我关闭struts2漏洞容器"))
