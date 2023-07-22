@@ -75,6 +75,10 @@
             scrollbar-width: none;
             /* Firefox */
         }
+
+        pre {
+            white-space: pre-wrap;
+        }
     </style>
 </head>
 
@@ -148,9 +152,9 @@
                             'Content-Type': 'application/json'
                         }
                     }).then(response => {
-                        if (response.status== 200 && response.data.code == 0) {
+                        if (response.status == 200 && response.data.code == 0) {
                             console.log('success');
-                            console.log(response);                            
+                            console.log(response);
                             this.messages.push({
                                 user: response.data.data.role,
                                 date: new Date().toLocaleString(),
