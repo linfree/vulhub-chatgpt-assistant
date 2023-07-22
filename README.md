@@ -24,7 +24,7 @@
 ```bash
 pip install -r requirements.txt
 ```
-> 注：需要提前安装好docker和docker-compose
+> 注：需要提前安装好docker和docker-compose，和openai的api key
 
 ### 2. 下载vulhub仓库
 ```bash
@@ -32,13 +32,19 @@ cd src/vulhub
 git clone git@github.com:vulhub/vulhub.git
 ```
 
-### 3. 启动服务
+### 3. 配置参数
+```bash
+# 配置文件地址： src/config.py
+# 主要是配置openai的api key
+```
+
+### 4. 启动服务
 ```bash
 cd src
 uvicorn main:app --reload
 ```
 
-### 4. 访问服务
+### 5. 访问服务
 ```bash
 http://127.0.0.1:8000/
 ```
