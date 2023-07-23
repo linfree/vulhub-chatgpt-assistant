@@ -1,8 +1,8 @@
 # vulhub-chatgpt-assistant
-基于ChatGPT的漏洞靶场环境自动化部署助手
+基于ChatGPT的漏洞靶机环境自动化部署助手
 
 ## 介绍
-本项目基于[ChatGPT](https://openai.com/)，通过聊天机器人自动创建漏洞环境，自动关闭漏洞环境，自动获取漏洞环境的验证文档，自动build基础应用镜像，并启动容器。
+本项目基于[ChatGPT](https://openai.com/)，通过聊天机器人自动创建漏洞靶机环境，自动关闭漏洞环境，自动获取漏洞环境的poc文档，自动build基础应用镜像并启动容器。
 
 项目可以独立运行，也可以作为[ChatGPT](https://openai.com/)的插件运行。（插件方式需要有chatgpt开发者权限，没测试过）
 
