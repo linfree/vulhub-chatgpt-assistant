@@ -13,4 +13,6 @@ HTTPS_PROXY = 'http://127.0.0.1:1080'
 # docker server url
 DOCKER_SERVER_URL = "tcp://localhost:2375"
 
+DOCKER_SERVER_REMOTE_IP = "127.0.0.1"
+
 # vulhub path

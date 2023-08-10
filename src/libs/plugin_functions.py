@@ -8,8 +8,6 @@ import os
 import yaml
 import docker
 
-DOCKER_SERVER_IP = "127.0.0.1"
- 
 
 from libs.vulhub_api import (
     VULHUB_PATH,
@@ -19,7 +17,9 @@ from libs.vulhub_api import (
 
 from config import (
     DOCKER_SERVER_URL,
+    DOCKER_SERVER_REMOTE_IP
 )
+DOCKER_SERVER_IP = DOCKER_SERVER_REMOTE_IP
 
 client = docker.DockerClient(base_url=DOCKER_SERVER_URL)
 
